@@ -19,10 +19,14 @@ class RPSBot
 		load_moves
 	end
 
-	def save_moves
-		File.open(@filename, 'w') {|f| f.write(@past_moves.to_yaml)}
+	def report
+		puts "#{self.class.name}"
+		puts "\tROUNDS:\t#{@total_rounds}"
+		puts "\tWINS:\t#{@wins}"
+		puts "\tWIN%:\t#{(@wins.to_f / @total_rounds.to_f)}"
 	end
 
+	## Manages a round
 	def round(player_move)
 		raise RuntimeError, "#{player_move} is not an acceptable move" unless is_acceptable(player_move.to_sym)
 		@past_moves << player_move
@@ -30,10 +34,13 @@ class RPSBot
 		round = declare_winner(bot_move, player_move)
 		@total_rounds += 1
 		@wins += 1 if round < 0
+		save_moves
+		round
 	end
 
 	private
 
+	## -1 if bot won, 0 if draw, 1 if player won
 	def declare_winner(bot_move, player_move)
 		return 0 if bot_move == player_move
 
@@ -61,6 +68,10 @@ class RPSBot
 		end
 	end
 
+	def save_moves
+		File.open(@filename, 'w') {|f| f.write(@past_moves.to_yaml)}
+	end
+
 	def is_acceptable(move)
 		@@ACCEPTABLE_MOVES.include?(move)
 	end
@@ -73,9 +84,30 @@ class RandomBot < RPSBot
 	end
 end
 
+bots = [ RandomBot.new ]
 
+while true
+	move = gets.chomp.to_sym
+	break if move == :quit
 
+	bots.each do |bot|
+		res = bot.round(move)
 
+		if res < 0
+			puts "#{bot.class.name} won"
+		elsif res == 0
+			puts "#{bot.class.name} drew"
+		else
+			puts "#{bot.class.name} lost"
+		end
+	end
+
+	puts ''
+end
+
+bots.each do |bot|
+	bot.report
+end
 
 
 
